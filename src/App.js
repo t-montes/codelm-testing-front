@@ -190,7 +190,7 @@ const App = () => {
           boxShadow: 'none',
         }}
       >
-        <Grid container spacing={2} sx={{ height: '100%', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
+        <Grid container spacing={2} sx={{ height: '100%', alignItems: 'flex-start', justifyContent: 'flex-start', alignContent: 'flex-start' }}>
           {/* Top section: Prompt input */}
           <Grid item xs={12}>
             <TextField
