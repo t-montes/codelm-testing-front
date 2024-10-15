@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Box, Button, Grid, TextField, Typography, Paper, IconButton } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import "./App.css";
+import { Box, Button, Grid, TextField, Typography, Paper, IconButton, Select, MenuItem, FormControl } from '@mui/material';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
@@ -96,11 +97,33 @@ const App = () => {
   const [updatedCode, setUpdatedCode] = useState('');
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [model, setModel] = useState('gpt-4o');
+  const [apiKey, setApiKey] = useState(sessionStorage.getItem('openaiApiKey') || '');
 
-  // Function to handle submit
+  useEffect(() => {
+    const handleResize = () => {
+      window.location.reload();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (apiKey) {
+      sessionStorage.setItem('openaiApiKey', apiKey);
+    }
+  }, [apiKey]);
+
   const handleSubmit = async () => {
     if (!code && !prompt) {
       setError('One of the fields must be filled');
+      return;
+    } else if (!apiKey) {
+      setError('API key is required');
       return;
     } else {
       setError('');
@@ -112,23 +135,23 @@ const App = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey};`,
         },
-        body: JSON.stringify({ prompt, code }),
+        body: JSON.stringify({ prompt, code, model }),
       });
       setProcessing(false);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
       const data = await response.json();
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setUpdatedCode(data.updatedCode);
     } catch (error) {
-      setError('An error occurred while processing the request: ' + error.message);
+      setError('Request Error: ' + error.message);
     }
   };
 
-  // Function to paste clipboard content to code input
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -138,7 +161,6 @@ const App = () => {
     }
   };
 
-  // Function to copy output code to clipboard
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(updatedCode);
@@ -165,11 +187,11 @@ const App = () => {
           height: '85%',
           position: 'relative',
           border: 'none',
-          'box-shadow': 'none',
+          boxShadow: 'none',
         }}
       >
         <Grid container spacing={2} sx={{ height: '100%', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
-          {/* Top section: Prompt input and Submit button */}
+          {/* Top section: Prompt input */}
           <Grid item xs={12}>
             <TextField
               placeholder="Enter your prompt"
@@ -184,45 +206,70 @@ const App = () => {
                 fontSize: '14px',
                 borderRadius: '4px',
                 marginBottom: '1rem',
-                resize: 'none',
-                overflow: 'hidden',
               }}
               inputProps={{
                 style: {
                   height: 'auto',
-                  minHeight: '1.5rem', // Default for a single line
+                  minHeight: '1.5rem',
                 },
               }}
-              onInput={(e) => {
-                e.target.style.height = 'auto'; // Reset height
-                e.target.style.height = `${e.target.scrollHeight}px`; // Adjust based on content
-              }}
             />
+          </Grid>
 
-            <Button
-              variant="contained"
-              color="primary"
-              disabled={processing}
-              fullWidth
-              onClick={handleSubmit}
-              sx={{ padding: '1rem', fontSize: '1rem', marginBottom: '1rem' }}
-              style={{
-                backgroundColor: processing ? '#cccccc' : '#1976d2',
-              }}
-            >
-              Submit
-            </Button>
-
-            {/* Display error if fields are empty */}
-            {error && (
-              <Typography
-                variant="body2"
-                color="error"
-                sx={{ marginTop: '0.5rem', textAlign: 'center' }}
+          {/* Row for API Key, Model Selection, and Submit Button */}
+          <Grid item container xs={12} spacing={2}>
+            <Grid item xs={6}>
+              <TextField
+                placeholder="OpenAI API Key"
+                fullWidth
+                variant="outlined"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                sx={{
+                  backgroundColor: '#ffffff',
+                  color: '#000000',
+                  fontSize: '14px',
+                  borderRadius: '4px',
+                }}
+              />
+            </Grid>
+            <Grid item xs={2}>
+              <FormControl fullWidth>
+                <Select
+                  labelId="model-select-label"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                >
+                  <MenuItem value="gpt-4o">gpt-4o</MenuItem>
+                  <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={4}>
+              <Button
+                variant="contained"
+                color="primary"
+                disabled={processing}
+                fullWidth
+                onClick={handleSubmit}
+                sx={{ padding: '1rem', fontSize: '1rem' }}
+                style={{
+                  backgroundColor: processing ? '#cccccc' : '#1976d2',
+                }}
               >
-                {error}
-              </Typography>
-            )}
+                Submit
+              </Button>
+              {/* Display error if fields are empty */}
+              {error && (
+                <Typography
+                  variant="body2"
+                  color="error"
+                  sx={{ marginTop: '0.5rem', textAlign: 'center' }}
+                >
+                  {error}
+                </Typography>
+              )}
+            </Grid>
           </Grid>
 
           {/* Left section: Code input */}
