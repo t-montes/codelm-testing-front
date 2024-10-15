@@ -131,7 +131,7 @@ const App = () => {
 
     try {
       setProcessing(true);
-      const response = await fetch('http://localhost:8080/process', {
+      const response = await fetch('http://backend:8080/process', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,6 +148,7 @@ const App = () => {
       }
       setUpdatedCode(data.updatedCode);
     } catch (error) {
+      setProcessing(false);
       setError('Request Error: ' + error.message);
     }
   };
