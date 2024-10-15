@@ -122,16 +122,14 @@ const App = () => {
     if (!code && !prompt) {
       setError('One of the fields must be filled');
       return;
-    } else if (!apiKey) {
-      setError('API key is required');
-      return;
     } else {
+      // apiKey is not required, may be configured on the backend
       setError('');
     }
 
     try {
       setProcessing(true);
-      const response = await fetch('http://backend:8080/process', {
+      const response = await fetch('http://localhost:8080/process', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
